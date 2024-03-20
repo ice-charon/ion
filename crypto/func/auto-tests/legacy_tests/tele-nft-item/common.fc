@@ -1,5 +1,5 @@
 const int one_ton = 1000000000;
-const int dns_next_resolver_prefix = 0xba93; ;; dns_next_resolver prefix - https://github.com/ton-blockchain/ton/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L819
+const int dns_next_resolver_prefix = 0xba93; ;; dns_next_resolver prefix - https://github.com/ion-blockchain/ion/blob/7e3df93ca2ab336716a230fceb1726d81bac0a06/crypto/block/block.tlb#L819
 
 const int op::fill_up = 0x370fec51;
 const int op::outbid_notification = 0x557cea20;

@@ -41,7 +41,7 @@ using td::Ref;
 
 class TestNode : public td::actor::Actor {
  private:
-  std::string global_config_ = "ton-global.config";
+  std::string global_config_ = "ion-global.config";
   enum {
     min_ls_version = 0x101,
     min_ls_capabilities = 1

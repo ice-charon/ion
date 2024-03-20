@@ -34,4 +34,4 @@ nix-build macos-tonlib.nix
 cp ./result/lib/libtonlibjson.dylib artifacts/
 cp ./result/lib/libemulator.dylib artifacts/
 cp ./result/lib/fift/* artifacts/lib/
-cp -r ./result/share/ton/smartcont artifacts/
+cp -r ./result/share/ion/smartcont artifacts/

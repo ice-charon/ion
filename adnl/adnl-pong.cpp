@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     td::log_interface = td::default_log_interface;
   };
 
-  std::string config = "/var/ton-work/etc/adnl-proxy.conf.json";
+  std::string config = "/var/ion-work/etc/adnl-proxy.conf.json";
 
   td::OptionParser p;
   p.set_description("adnl pinger");

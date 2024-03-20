@@ -152,7 +152,7 @@ class ValidatorEngine : public td::actor::Actor {
   td::actor::ActorOwn<ton::adnl::AdnlExtServer> control_ext_server_;
 
   std::string local_config_ = "";
-  std::string global_config_ = "ton-global.config";
+  std::string global_config_ = "ion-global.config";
   std::string config_file_;
   std::string temp_config_file() const {
     return config_file_ + ".tmp";
@@ -160,7 +160,7 @@ class ValidatorEngine : public td::actor::Actor {
 
   std::string fift_dir_ = "";
 
-  std::string db_root_ = "/var/ton-work/db/";
+  std::string db_root_ = "/var/ion-work/db/";
 
   std::vector<td::IPAddress> addrs_;
   std::vector<td::IPAddress> proxy_addrs_;

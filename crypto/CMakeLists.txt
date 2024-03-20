@@ -570,4 +570,4 @@ endif()
 
 install(TARGETS fift func create-state tlbc RUNTIME DESTINATION bin)
 install(DIRECTORY fift/lib/ DESTINATION lib/fift)
-install(DIRECTORY smartcont DESTINATION share/ton)
+install(DIRECTORY smartcont DESTINATION share/ion)

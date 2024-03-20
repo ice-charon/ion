@@ -21,5 +21,5 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@master
         with:
-          name: ton-binaries-macos-12
+          name: ion-binaries-macos-12
           path: artifacts

@@ -15,7 +15,7 @@
         , staticMusl ? false, staticExternalDeps ? staticGlibc }:
         with host.lib;
         stdenv.mkDerivation {
-          pname = "ton";
+          pname = "ion";
           version = "dev";
 
           src = ./.;
@@ -131,7 +131,7 @@
               staticExternalDeps = true;
             });
             ton-oldglibc_staticbinaries = host.symlinkJoin {
-              name = "ton";
+              name = "ion";
               paths = [ ton-musl.bin ton-oldglibc.out ];
             };
           };
@@ -148,7 +148,7 @@
                 staticExternalDeps = true;
               };
               ton-staticbin-dylib = host.symlinkJoin {
-                name = "ton";
+                name = "ion";
                 paths = [ ton-static.bin ton-static.out ];
               };
             };

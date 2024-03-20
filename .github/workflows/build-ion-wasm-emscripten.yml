@@ -15,9 +15,9 @@ jobs:
     - name: Install system libraries
       run: |
         sudo apt-get update
-        sudo apt-get install -y build-essential git openssl cmake ninja-build zlib1g-dev libssl-dev libsecp256k1-dev libmicrohttpd-dev libsodium-dev liblz4-dev
+        sudo apt-get install -y build-essential git openssl cmake ninja-build zlib1g-dev libssl-dev libsecp256k1-dev libmicrohttpd-dev libsodium-dev
 
-    - name: Build TON WASM artifacts
+    - name: Build ION WASM artifacts
       run: |
         cp assembly/wasm/fift-func-wasm-build-ubuntu.sh .
         chmod +x fift-func-wasm-build-ubuntu.sh
@@ -26,5 +26,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@master
       with:
-        name: ton-wasm-binaries
+        name: ion-wasm-binaries
         path: artifacts

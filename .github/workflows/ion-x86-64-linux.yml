@@ -37,5 +37,5 @@ jobs:
     - name: Upload artifacts
       uses: actions/upload-artifact@master
       with:
-        name: ton-x86_64-linux-binaries
+        name: ion-x86_64-linux-binaries
         path: artifacts

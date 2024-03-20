@@ -80,7 +80,7 @@ class TestNode : public td::actor::Actor {
  private:
   td::actor::ActorOwn<ton::validator::ValidatorManagerInterface> validator_manager_;
 
-  std::string db_root_ = "/var/ton-work/db/";
+  std::string db_root_ = "/var/ion-work/db/";
   std::string global_config_;
   td::Ref<ton::validator::ValidatorManagerOptions> opts_;
 

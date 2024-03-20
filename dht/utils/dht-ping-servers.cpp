@@ -51,7 +51,7 @@ class AdnlNode : public td::actor::Actor {
   std::string host_ = "127.0.0.1";
   td::uint16 port_ = 2380;
 
-  std::string global_config_ = "ton-global.config";
+  std::string global_config_ = "ion-global.config";
 
   struct NodeInfo {
     ton::adnl::AdnlNodeIdShort id;

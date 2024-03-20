@@ -1184,7 +1184,7 @@ class RldpHttpProxy : public td::actor::Actor {
     }
     std::transform(host.begin(), host.end(), host.begin(), [](unsigned char c) { return std::tolower(c); });
     bool allow = proxy_all_;
-    for (const char *suffix : {".adnl", ".ton", ".bag"}) {
+    for (const char *suffix : {".adnl", ".ion", ".bag"}) {
       if (td::ends_with(host, td::Slice(suffix))) {
         allow = true;
       }

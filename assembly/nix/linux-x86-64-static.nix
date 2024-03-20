@@ -24,7 +24,7 @@ let
 
 in
 stdenv.mkDerivation {
-  pname = "ton";
+  pname = "ion";
   version = "dev-bin";
 
   src = ./.;

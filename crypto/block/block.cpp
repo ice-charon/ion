@@ -190,36 +190,48 @@ int parse_hex_digit(int c) {
 }
 
 bool StdAddress::parse_addr(td::Slice acc_string) {
+  LOG(DEBUG) << "Starting parse_addr with acc_string: " << acc_string;
   if (rdeserialize(acc_string)) {
+    LOG(DEBUG) << "Address deserialized successfully";
     return true;
   }
+  LOG(DEBUG) << "Failed to deserialize, proceeding with manual parse";
   testnet = false;
   bounceable = true;
+  LOG(INFO) << "Setting bounceable to true";
   auto pos = acc_string.find(':');
   if (pos != std::string::npos) {
+    LOG(DEBUG) << "Found ':' at position " << pos;
     if (pos > 10) {
+      LOG(WARNING) << "Position of ':' exceeds 10, invalidating address";
       return invalidate();
     }
     auto tmp = acc_string.substr(0, pos);
     auto r_wc = td::to_integer_safe<ton::WorkchainId>(tmp);
     if (r_wc.is_error()) {
+      LOG(ERROR) << "Error converting workchain ID, invalidating address";
       return invalidate();
     }
     workchain = r_wc.move_as_ok();
+    LOG(DEBUG) << "Workchain ID set to " << workchain;
     if (workchain == ton::workchainInvalid) {
+      LOG(ERROR) << "Workchain ID is invalid, invalidating address";
       return invalidate();
     }
     ++pos;
   } else {
+    LOG(DEBUG) << "No ':' found in acc_string, starting position set to 0";
     pos = 0;
   }
-  // LOG(DEBUG) << "parsing " << acc_string << " address";
+  
   if (acc_string.size() != pos + 64) {
+    LOG(ERROR) << "acc_string size after ':' does not match expected length (64), invalidating address";
     return invalidate();
   }
   for (unsigned i = 0; i < 64; i++) {
     int x = parse_hex_digit(acc_string[pos + i]), m = 15;
     if (x < 0) {
+      LOG(ERROR) << "Invalid hex digit in acc_string, invalidating address";
       return invalidate();
     }
     if (!(i & 1)) {
@@ -228,8 +240,10 @@ bool StdAddress::parse_addr(td::Slice acc_string) {
     }
     addr.data()[i >> 1] = (unsigned char)((addr.data()[i >> 1] & ~m) | x);
   }
+  LOG(DEBUG) << "Address parsed and set successfully";
   return true;
 }
+
 
 bool parse_std_account_addr(td::Slice acc_string, ton::WorkchainId& wc, ton::StdSmcAddress& addr, bool* bounceable,
                             bool* testnet_only) {

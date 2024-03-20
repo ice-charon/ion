@@ -8,11 +8,11 @@ WORKDIR /
 
 ARG BRANCH
 ARG REPO
-RUN git clone --recurse-submodules https://github.com/$REPO ton && cd ton && git checkout $BRANCH && git submodule update
+RUN git clone --recurse-submodules https://github.com/$REPO ion && cd ion && git checkout $BRANCH && git submodule update
 
-WORKDIR /ton
-RUN mkdir /ton/build
-WORKDIR /ton/build
+WORKDIR /ion
+RUN mkdir /ion/build
+WORKDIR /ion/build
 ENV CC clang
 ENV CXX clang++
 ENV CCACHE_DISABLE 1
