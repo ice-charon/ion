@@ -19,6 +19,7 @@
 #include "td/actor/MultiPromise.h"
 
 #include <mutex>
+#include <thread>
 
 namespace td {
 namespace detail {
@@ -27,6 +28,14 @@ class MultiPromiseImpl {
   explicit MultiPromiseImpl(MultiPromise::Options options) : options_(options) {
   }
   ~MultiPromiseImpl() {
+    // pending_promises_ is obtained promises by InitGuard::get_promise
+    // wait here to sync and wait all promises report
+    while ((std::this_thread::yield(), true)) {
+      std::unique_lock<std::mutex> lock(mutex_);
+      if (pending_promises_ == 0) {
+        break;
+      }
+    }
     for (auto &promise : pending_) {
       promise.set_value(Unit());
     }
@@ -34,6 +43,10 @@ class MultiPromiseImpl {
 
   void on_status(Status status) {
     if (status.is_ok() || options_.ignore_errors) {
+      std::unique_lock<std::mutex> lock(mutex_);
+      if (pending_promises_) {
+        --pending_promises_;
+      }
       return;
     }
     std::vector<Promise<>> promises;
@@ -45,19 +58,17 @@ class MultiPromiseImpl {
       } else {
         CHECK(pending_.empty());
       }
+      pending_promises_ = 0;
     }
     for (auto &promise : promises) {
       promise.set_error(status.clone());
     }
   }
   void add_promise(Promise<> promise) {
-    if (options_.ignore_errors) {
-      pending_.push_back(std::move(promise));
-    }
     Status status;
     {
       std::unique_lock<std::mutex> lock(mutex_);
-      if (pending_error_.is_error()) {
+      if (!options_.ignore_errors && pending_error_.is_error()) {
         status = pending_error_.clone();
       } else {
         pending_.push_back(std::move(promise));
@@ -68,17 +79,24 @@ class MultiPromiseImpl {
     }
   }
 
+  void add_pending_promise() {
+    std::unique_lock<std::mutex> lock(mutex_);
+    ++pending_promises_;
+  }
+
  private:
   std::mutex mutex_;
   std::vector<Promise<>> pending_;
   MultiPromise::Options options_;
   Status pending_error_;
+  uint32_t pending_promises_ = 0;
 };
 }  // namespace detail
 void MultiPromise::InitGuard::add_promise(Promise<> promise) {
   impl_->add_promise(std::move(promise));
 }
 Promise<> MultiPromise::InitGuard::get_promise() {
+  impl_->add_pending_promise();
   return [impl = impl_](Result<Unit> result) {
     if (result.is_ok()) {
       impl->on_status(Status::OK());
