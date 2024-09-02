@@ -96,7 +96,7 @@ TEST(Tonlib, WalletV3) {
   LOG(ERROR) << td::base64_encode(std_boc_serialize(get_wallet_v3_source()).move_as_ok());
   CHECK(get_wallet_v3_source()->get_hash() == ton::WalletV3::get_init_code(2)->get_hash());
 
-  auto fift_output = fift::mem_run_fift(load_source("smartcont/new-wallet-v3.fif"), {"aba", "0", "239"}).move_as_ok();
+  auto fift_output = fift::mem_run_fift("new-wallet-v3.fif", {"aba", "0", "239"}).move_as_ok();
   auto new_wallet_pk = fift_output.source_lookup.read_file("new-wallet.pk").move_as_ok().data;
   auto new_wallet_query = fift_output.source_lookup.read_file("new-wallet-query.boc").move_as_ok().data;
   auto new_wallet_addr = fift_output.source_lookup.read_file("new-wallet.addr").move_as_ok().data;

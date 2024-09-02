@@ -29,12 +29,8 @@ std::string current_dir() {
   return td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir().str();
 }
 
-std::string load_test(std::string name) {
-  return td::read_file_str(current_dir() + "fift/" + name).move_as_ok();
-}
-
 td::Status run_fift(std::string name, bool expect_error = false) {
-  auto res = fift::mem_run_fift(load_test(name));
+  auto res = fift::mem_run_fift(current_dir() + "fift/" + name);
   if (expect_error) {
     res.ensure_error();
     return td::Status::OK();

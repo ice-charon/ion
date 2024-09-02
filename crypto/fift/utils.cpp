@@ -32,10 +32,8 @@ std::string fift_dir(std::string dir) {
   return dir.size() > 0 ? dir : td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir().str() + "lib/";
 }
 std::string smartcont_dir(std::string dir) {
-  return dir.size() > 0
-             ? dir
-             : td::PathView(td::PathView(td::realpath(__FILE__).move_as_ok()).parent_dir_noslash()).parent_dir().str() +
-                   "smartcont/";
+  std::string path = dir.size() > 0 ? std::move(dir) : td::realpath(__FILE__).move_as_ok();
+  return td::PathView(td::PathView(path).parent_dir_noslash()).parent_dir().str() + "smartcont/";
 }
 td::Result<std::string> load_source(std::string name, std::string dir = "") {
   return td::read_file_str(fift_dir(dir) + name);
@@ -187,14 +185,29 @@ td::Result<fift::SourceLookup> run_fift(fift::SourceLookup source_lookup, std::o
   return std::move(fift.config().source_lookup);
 }
 }  // namespace
-td::Result<FiftOutput> mem_run_fift(std::string source, std::vector<std::string> args, std::string fift_dir) {
-  std::stringstream ss;
-  TRY_RESULT(source_lookup, create_source_lookup(std::move(source), true, true, true, true, true, true, true, fift_dir));
-  TRY_RESULT_ASSIGN(source_lookup, run_fift(std::move(source_lookup), &ss, true, std::move(args)));
-  FiftOutput res;
-  res.source_lookup = std::move(source_lookup);
-  res.output = ss.str();
-  return std::move(res);
+td::Result<FiftOutput> mem_run_fift(std::string file, std::vector<std::string> args, std::string src_dir) {
+  std::string source;
+  if (src_dir.empty()) {
+    auto data = td::read_file_str(file);
+    if (data.is_ok()) {
+      source = data.move_as_ok();
+    }
+  }
+  if (source.empty()) {
+    const std::array<std::string, 2> dirs = { fift_dir(src_dir), smartcont_dir(src_dir) };
+    for (auto& dir : dirs) {
+      auto data = td::read_file_str(dir + file);
+      if (data.is_ok()) {
+        source = data.move_as_ok();
+        break;
+      }
+    }
+  }
+  if (source.empty()) {
+    return td::Status::Error(PSTRING() << file << " is missing");
+  }
+  TRY_RESULT(source_lookup, create_source_lookup(std::move(source), true, true, true, true, true, true, true, src_dir));
+  return mem_run_fift(std::move(source_lookup), std::move(args));
 }
 td::Result<FiftOutput> mem_run_fift(SourceLookup source_lookup, std::vector<std::string> args) {
   std::stringstream ss;
