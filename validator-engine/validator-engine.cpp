@@ -779,13 +779,7 @@ class ValidatorElectionBidCreator : public td::actor::Actor {
   }
 
   void updated_config() {
-    auto codeR = td::read_file_str(dir_ + "/validator-elect-req.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (validator-elect-req.fif)"));
-      return;
-    }
-    auto R = fift::mem_run_fift(codeR.move_as_ok(),
-                                {"validator-elect-req.fif", wallet_, td::to_string(date_), td::to_string(frac),
+    auto R = fift::mem_run_fift("", {"validator-elect-req.fif", wallet_, td::to_string(date_), td::to_string(frac),
                                  adnl_addr_.bits256_value().to_hex(), "OUTPUT"},
                                 dir_ + "/");
     if (R.is_error()) {
@@ -816,13 +810,7 @@ class ValidatorElectionBidCreator : public td::actor::Actor {
   void signed_bid(td::BufferSlice signature) {
     signature_ = std::move(signature);
 
-    auto codeR = td::read_file_str(dir_ + "/validator-elect-signed.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (validator-elect-req.fif)"));
-      return;
-    }
-    auto R = fift::mem_run_fift(
-        codeR.move_as_ok(),
+    auto R = fift::mem_run_fift("",
         {"validator-elect-signed.fif", wallet_, td::to_string(date_), td::to_string(frac),
          adnl_addr_.bits256_value().to_hex(), td::base64_encode(perm_key_full_.export_as_slice().as_slice()),
          td::base64_encode(signature_.as_slice()), "OUTPUT"},
@@ -904,13 +892,8 @@ class ValidatorProposalVoteCreator : public td::actor::Actor {
   void got_id(ton::PublicKey pubkey, size_t idx) {
     pubkey_ = std::move(pubkey);
     idx_ = idx;
-    auto codeR = td::read_file_str(dir_ + "/config-proposal-vote-req.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (validator-elect-req.fif)"));
-      return;
-    }
     auto data = proposal_.as_slice().str();
-    auto R = fift::mem_run_fift(codeR.move_as_ok(), {"config-proposal-vote-req.fif", "-i", td::to_string(idx_), data},
+    auto R = fift::mem_run_fift("", {"config-proposal-vote-req.fif", "-i", td::to_string(idx_), data},
                                 dir_ + "/");
     if (R.is_error()) {
       abort_query(R.move_as_error_prefix("fift fail (cofig-proposal-vote-req.fif)"));
@@ -940,18 +923,12 @@ class ValidatorProposalVoteCreator : public td::actor::Actor {
   void signed_vote(td::BufferSlice signature) {
     signature_ = std::move(signature);
 
-    auto codeR = td::read_file_str(dir_ + "/config-proposal-vote-signed.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (config-proposal-vote-signed.fif)"));
-      return;
-    }
-
     auto key = td::base64_encode(pubkey_.export_as_slice().as_slice());
     auto sig = td::base64_encode(signature_.as_slice());
 
     auto data = proposal_.as_slice().str();
     auto R = fift::mem_run_fift(
-        codeR.move_as_ok(), {"config-proposal-vote-signed.fif", "-i", td::to_string(idx_), data, key, sig}, dir_ + "/");
+        "", {"config-proposal-vote-signed.fif", "-i", td::to_string(idx_), data, key, sig}, dir_ + "/");
     if (R.is_error()) {
       abort_query(R.move_as_error_prefix("fift fail (config-proposal-vote-signed.fif)"));
       return;
@@ -1027,13 +1004,8 @@ class ValidatorPunishVoteCreator : public td::actor::Actor {
   void got_id(ton::PublicKey pubkey, size_t idx) {
     pubkey_ = std::move(pubkey);
     idx_ = idx;
-    auto codeR = td::read_file_str(dir_ + "/complaint-vote-req.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (complaint-vote-req.fif)"));
-      return;
-    }
     auto data = proposal_.as_slice().str();
-    auto R = fift::mem_run_fift(codeR.move_as_ok(),
+    auto R = fift::mem_run_fift("",
                                 {"complaint-vote-req.fif", td::to_string(idx_), td::to_string(election_id_), data},
                                 dir_ + "/");
     if (R.is_error()) {
@@ -1064,18 +1036,12 @@ class ValidatorPunishVoteCreator : public td::actor::Actor {
   void signed_vote(td::BufferSlice signature) {
     signature_ = std::move(signature);
 
-    auto codeR = td::read_file_str(dir_ + "/complaint-vote-signed.fif");
-    if (codeR.is_error()) {
-      abort_query(codeR.move_as_error_prefix("fif not found (complaint-vote-signed.fif)"));
-      return;
-    }
-
     auto key = td::base64_encode(pubkey_.export_as_slice().as_slice());
     auto sig = td::base64_encode(signature_.as_slice());
 
     auto data = proposal_.as_slice().str();
     auto R = fift::mem_run_fift(
-        codeR.move_as_ok(),
+        "",
         {"complaint-vote-signed.fif", td::to_string(idx_), td::to_string(election_id_), data, key, sig}, dir_ + "/");
     if (R.is_error()) {
       abort_query(R.move_as_error_prefix("fift fail (complaint-vote-signed.fif)"));
