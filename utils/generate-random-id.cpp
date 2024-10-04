@@ -31,6 +31,7 @@
 #include "adnl/utils.hpp"
 #include "auto/tl/ton_api.h"
 #include "auto/tl/ton_api_json.h"
+#include "block/block.h"
 #include "tl/tl_json.h"
 #include "td/utils/OptionParser.h"
 #include "td/utils/filesystem.h"
@@ -119,6 +120,14 @@ int main(int argc, char *argv[]) {
     std::cout << v << std::endl;
     v = td::json_encode<std::string>(td::ToJson(ton::adnl::AdnlNodeIdShort{short_key}.tl()));
     std::cout << v << std::endl;
+    ton::ton_api::downcast_call(
+      *pub_key.tl(),
+      td::overloaded(
+        [&](const ton::ton_api::pub_ed25519 &obj) { v = block::PublicKey::from_bytes(obj.key_.as_slice()).move_as_ok().serialize(); },
+        [&](const ton::ton_api::pub_aes &obj) { v = obj.key_.to_hex(); },
+        [&](const auto &) {})
+    );
+    std::cout << "pubkey: " << v << std::endl;
   } else if (mode == "adnl") {
     if (!addr_list) {
       std::cerr << "'-a' option missing" << std::endl;
