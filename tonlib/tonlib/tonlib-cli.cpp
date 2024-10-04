@@ -129,8 +129,8 @@ class TonlibCli : public td::actor::Actor {
     std::string key_dir{"."};
     bool in_memory{false};
     bool use_callbacks_for_network{false};
-    td::int32 wallet_version = 2;
-    td::int32 wallet_revision = 0;
+    td::int32 wallet_version = 3;
+    td::int32 wallet_revision = 2;
     td::optional<td::uint32> wallet_id;
     td::optional<td::int32> workchain_id;
     bool ignore_cache{false};
@@ -255,17 +255,15 @@ class TonlibCli : public td::actor::Actor {
                [&](auto r_ok) {
                  LOG_IF(ERROR, r_ok.is_error()) << r_ok.error();
                  if (r_ok.is_ok()) {
-                   if (r_ok.ok()->config_info_) {
-                     if (options_.wallet_id) {
-                       wallet_id_ = options_.wallet_id.value();
-                     } else {
-                       wallet_id_ = static_cast<td::uint32>(r_ok.ok()->config_info_->default_wallet_id_);
-                     }
-                     if (options_.workchain_id) {
-                       workchain_id_ = options_.workchain_id.value();
-                     } else {
-                       workchain_id_ = 0;
-                     }
+                   if (options_.workchain_id) {
+                     workchain_id_ = options_.workchain_id.value();
+                   } else {
+                     workchain_id_ = 0;
+                   }
+                   if (options_.wallet_id) {
+                     wallet_id_ = options_.wallet_id.value();
+                   } else {
+                     wallet_id_ = 698983191; // compatible with TON
                    }
                    load_channnels();
                    td::TerminalIO::out() << "Tonlib is inited\n";
@@ -1904,14 +1902,9 @@ class TonlibCli : public td::actor::Actor {
       if (r_addr.is_ok()) {
         return r_addr.move_as_ok();
       }
+      return r_addr.move_as_error();
     }
-    if (need_private_key) {
-      return td::Status::Error("Don't have a private key for this address");
-    }
-    //TODO: validate address
-    Address res;
-    res.address = make_object<tonlib_api::accountAddress>(key.str());
-    return std::move(res);
+    return td::Status::Error("Don't have a private key for this address");
   }
 
   void delete_key(td::Slice key) {
@@ -2439,7 +2432,7 @@ int main(int argc, char* argv[]) {
   p.add_option('N', "config-name", "set lite server config name", [&](td::Slice arg) { options.name = arg.str(); });
   p.add_option('n', "use-callbacks-for-network", "do not use this",
                [&]() { options.use_callbacks_for_network = true; });
-  p.add_checked_option('w', "wallet-id", "do not use this", [&](td::Slice arg) {
+  p.add_checked_option('w', "wallet-id", "Overwrites default (698983191)", [&](td::Slice arg) {
     TRY_RESULT(wallet_id, td::to_integer_safe<td::uint32>((arg)));
     options.wallet_id = wallet_id;
     return td::Status::OK();
@@ -2450,7 +2443,7 @@ int main(int argc, char* argv[]) {
     LOG(INFO) << "Use workchain_id = " << workchain_id;
     return td::Status::OK();
   });
-  p.add_checked_option('W', "wallet-version", "do not use this (version[.revision])", [&](td::Slice arg) {
+  p.add_checked_option('W', "wallet-version", "Overwrites default (3.2) (version[.revision])", [&](td::Slice arg) {
     td::ConstParser parser(arg);
     TRY_RESULT(version, td::to_integer_safe<td::int32>((parser.read_till_nofail('.'))));
     options.wallet_version = version;
