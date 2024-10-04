@@ -26,11 +26,12 @@
     Copyright 2017-2020 Telegram Systems LLP
 */
 #include <iostream>
-#include <iomanip>
+#include <optional>
 #include <string>
 #include "adnl/utils.hpp"
 #include "auto/tl/ton_api.h"
 #include "auto/tl/ton_api_json.h"
+#include "block/block.h"
 #include "tl/tl_json.h"
 #include "td/utils/OptionParser.h"
 #include "td/utils/filesystem.h"
@@ -41,13 +42,15 @@
 int main(int argc, char *argv[]) {
   ton::PrivateKey pk;
   td::optional<ton::adnl::AdnlAddressList> addr_list;
-  td::optional<td::int32> network_id_opt;
+  td::int32 network_id = -1;
+  bool network_id_set = false;
 
   td::OptionParser p;
   p.set_description("generate random id");
 
+  enum type_key : uint8_t { Ed25519, AES };
+  std::optional<type_key> key_type;
   std::string mode = "";
-
   std::string name = "id_ton";
 
   p.add_option('m', "mode", "sets mode (one of id/adnl/dht/keys/adnlid)", [&](td::Slice key) { mode = key.str(); });
@@ -72,6 +75,37 @@ int main(int argc, char *argv[]) {
     TRY_RESULT_PREFIX_ASSIGN(pk, ton::PrivateKey::import(data.as_slice()), "failed to import private key: ");
     return td::Status::OK();
   });
+  p.add_checked_option('r', "raw", "path to raw private key to import", [&](td::Slice key) {
+    if (!pk.empty()) {
+      return td::Status::Error("duplicate '-r' option");
+    }
+
+    TRY_RESULT_PREFIX(data, td::read_file_secure(key.str()), "failed to read private key: ");
+    if (key_type.value_or(Ed25519) == Ed25519) {
+      TRY_RESULT_PREFIX_ASSIGN(pk, ton::privkeys::Ed25519::import(data.as_slice()), "failed to import private key: ");
+    } else {
+      TRY_RESULT_PREFIX_ASSIGN(pk, ton::privkeys::AES::import(data.as_slice()), "failed to import private key: ");
+    }
+    return td::Status::OK();
+  });
+  p.add_checked_option('t', "type", "type of private key (Ed25519 or AES, default Ed25519)", [&](td::Slice key) {
+    if (key_type.has_value()) {
+      return td::Status::Error("duplicate '-t' option");
+    }
+
+    auto equal = [](const auto &from, const auto &to) {
+      return std::equal(from.begin(), from.end(), to.begin(), to.end(),
+                        [](auto &l, auto &r) { return td::to_lower(l) == td::to_lower(r); });
+    };
+    if (equal(key, td::Slice{"aes", 3})) {
+      key_type = AES;
+    } else if (equal(key, td::Slice{"ed25519", 7})) {
+      key_type = Ed25519;
+    } else {
+      return td::Status::Error("supported keys are AES and Ed25519");
+    }
+    return td::Status::OK();
+  });
   p.add_checked_option('a', "addr-list", "addr list to sign", [&](td::Slice key) {
     if (addr_list) {
       return td::Status::Error("duplicate '-a' option");
@@ -85,10 +119,11 @@ int main(int argc, char *argv[]) {
     return td::Status::OK();
   });
   p.add_checked_option('i', "network-id", "dht network id (default: -1)", [&](td::Slice key) {
-    if (network_id_opt) {
+    if (network_id_set) {
       return td::Status::Error("duplicate '-i' option");
     }
-    TRY_RESULT_PREFIX_ASSIGN(network_id_opt, td::to_integer_safe<td::int32>(key), "bad network id: ");
+    TRY_RESULT_PREFIX_ASSIGN(network_id, td::to_integer_safe<td::int32>(key), "bad network id: ");
+    network_id_set = true;
     return td::Status::OK();
   });
 
@@ -119,6 +154,14 @@ int main(int argc, char *argv[]) {
     std::cout << v << std::endl;
     v = td::json_encode<std::string>(td::ToJson(ton::adnl::AdnlNodeIdShort{short_key}.tl()));
     std::cout << v << std::endl;
+    ton::ton_api::downcast_call(
+      *pub_key.tl(),
+      td::overloaded(
+        [&](const ton::ton_api::pub_ed25519 &obj) { v = block::PublicKey::from_bytes(obj.key_.as_slice()).move_as_ok().serialize(); },
+        [&](const ton::ton_api::pub_aes &obj) { v = obj.key_.to_hex(); },
+        [&](const auto &) {})
+    );
+    std::cout << "pubkey: " << v << std::endl;
   } else if (mode == "adnl") {
     if (!addr_list) {
       std::cerr << "'-a' option missing" << std::endl;
@@ -135,7 +178,6 @@ int main(int argc, char *argv[]) {
       std::cerr << "'-a' option missing" << std::endl;
       return 2;
     }
-    td::int32 network_id = network_id_opt ? network_id_opt.value() : -1;
     td::BufferSlice to_sign = ton::serialize_tl_object(
         ton::dht::DhtNode{ton::adnl::AdnlNodeIdFull{pub_key}, addr_list.value(), -1, network_id, td::BufferSlice{}}
             .tl(),
